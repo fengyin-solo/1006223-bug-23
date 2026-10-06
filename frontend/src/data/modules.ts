@@ -1,7 +1,32 @@
 import type { ModuleMeta } from './types'
 
+// 岗位归属：只有归属岗位能改动对应模块，其余岗位只能查看不能改。
+export const OWNER_ROLES: Record<string, string> = {
+  station: '电站管理岗',
+  unit: '机组运行岗',
+  governor: '调速励磁岗',
+  excitation: '调速励磁岗',
+  transformer: '电气一次岗',
+  gate: '闸门操作岗',
+  seepage: '大坝监测岗',
+  displacement: '大坝监测岗',
+  trashrack: '闸门操作岗',
+  overhaul: '检修岗',
+  bearing: '检修岗',
+  cooling: '检修岗',
+  hydrology: '水情调度岗',
+  flood: '闸门操作岗',
+  generation: '水情调度岗',
+  protection: '保护校验岗',
+  defect: '检修岗',
+  crew: '检修岗',
+  spare: '物资岗',
+}
+
+export const ALL_ROLES: string[] = [...new Set(Object.values(OWNER_ROLES))]
+
 // 模块元数据由仓库生成时写入：字段、状态、动作、流转目标都在这里，页面不再各自写一遍。
-export const MODULES: ModuleMeta[] = [
+export const MODULES: Array<Omit<ModuleMeta, 'ownerRole'>> = [
   {
     key: "station",
     name: "电站台账",
@@ -214,5 +239,8 @@ export const MODULES: ModuleMeta[] = [
 ]
 
 export const MODULE_BY_KEY: Map<string, ModuleMeta> = new Map(
-  MODULES.map((item) => [item.key, item]),
+  MODULES.map((item) => [
+    item.key,
+    { ...item, ownerRole: OWNER_ROLES[item.key] ?? '电站管理岗' },
+  ]),
 )

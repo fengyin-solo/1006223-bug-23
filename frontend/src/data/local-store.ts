@@ -8,6 +8,19 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
+// 防御历史脏数据：同一个 id 只留第一条，重复登记不会在列表里出现两条。
+function dedupeById(rows: EntryRow[]): EntryRow[] {
+  const seen = new Set<number>()
+  return rows.filter((row) => {
+    const id = Number(row.id)
+    if (seen.has(id)) {
+      return false
+    }
+    seen.add(id)
+    return true
+  })
+}
+
 function readStorage(): Record<string, EntryRow[]> {
   const fallback = clone(SEED_ROWS)
   if (typeof window === 'undefined' || !window.localStorage) {
@@ -20,7 +33,11 @@ function readStorage(): Record<string, EntryRow[]> {
   }
   try {
     const parsed = JSON.parse(raw) as Record<string, EntryRow[]>
-    return { ...fallback, ...parsed }
+    const merged = { ...fallback, ...parsed }
+    for (const key of Object.keys(merged)) {
+      merged[key] = dedupeById(merged[key] ?? [])
+    }
+    return merged
   } catch {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(fallback))
     return fallback
