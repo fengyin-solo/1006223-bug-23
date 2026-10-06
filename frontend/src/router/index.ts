@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import Dashboard from '@/views/Dashboard.vue'
+import ModuleDetailPage from '@/components/ModuleDetailPage.vue'
+import { MODULES } from '@/data/modules'
+
 const Station = () => import('@/views/station/index.vue')
 const Unit = () => import('@/views/unit/index.vue')
 const Governor = () => import('@/views/governor/index.vue')
@@ -21,30 +24,44 @@ const Defect = () => import('@/views/defect/index.vue')
 const Crew = () => import('@/views/crew/index.vue')
 const Spare = () => import('@/views/spare/index.vue')
 
+const LIST_COMPONENTS: Record<string, () => Promise<unknown>> = {
+  station: Station,
+  unit: Unit,
+  governor: Governor,
+  excitation: Excitation,
+  transformer: Transformer,
+  gate: Gate,
+  seepage: Seepage,
+  displacement: Displacement,
+  trashrack: Trashrack,
+  overhaul: Overhaul,
+  bearing: Bearing,
+  cooling: Cooling,
+  hydrology: Hydrology,
+  flood: Flood,
+  generation: Generation,
+  protection: Protection,
+  defect: Defect,
+  crew: Crew,
+  spare: Spare,
+}
+
+const moduleRoutes = MODULES.flatMap((meta) => [
+  { path: `/${meta.key}`, name: meta.key, component: LIST_COMPONENTS[meta.key] },
+  {
+    path: `/${meta.key}/:id(\\d+)`,
+    name: `${meta.key}-detail`,
+    component: ModuleDetailPage,
+    props: (route: { params: Record<string, string> }) => ({
+      moduleKey: meta.key,
+      id: Number(route.params.id),
+    }),
+  },
+])
+
 const router = createRouter({
   history: createWebHistory(),
-  routes: [
-    { path: '/', name: 'dashboard', component: Dashboard },
-    { path: '/station', name: 'station', component: Station },
-    { path: '/unit', name: 'unit', component: Unit },
-    { path: '/governor', name: 'governor', component: Governor },
-    { path: '/excitation', name: 'excitation', component: Excitation },
-    { path: '/transformer', name: 'transformer', component: Transformer },
-    { path: '/gate', name: 'gate', component: Gate },
-    { path: '/seepage', name: 'seepage', component: Seepage },
-    { path: '/displacement', name: 'displacement', component: Displacement },
-    { path: '/trashrack', name: 'trashrack', component: Trashrack },
-    { path: '/overhaul', name: 'overhaul', component: Overhaul },
-    { path: '/bearing', name: 'bearing', component: Bearing },
-    { path: '/cooling', name: 'cooling', component: Cooling },
-    { path: '/hydrology', name: 'hydrology', component: Hydrology },
-    { path: '/flood', name: 'flood', component: Flood },
-    { path: '/generation', name: 'generation', component: Generation },
-    { path: '/protection', name: 'protection', component: Protection },
-    { path: '/defect', name: 'defect', component: Defect },
-    { path: '/crew', name: 'crew', component: Crew },
-    { path: '/spare', name: 'spare', component: Spare },
-  ],
+  routes: [{ path: '/', name: 'dashboard', component: Dashboard }, ...moduleRoutes],
 })
 
 export default router

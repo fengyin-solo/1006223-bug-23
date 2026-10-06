@@ -3,7 +3,7 @@
     <header class="page-head">
       <div>
         <h2>运营概览</h2>
-        <p class="page-desc">汇总各业务模块的关键指标，先看总量再看异常。</p>
+        <p class="page-desc">汇总各业务模块的关键指标，先看总量再看异常。各模块台账同源，跨模块读到的台数一致。</p>
       </div>
       <div class="page-actions">
         <button class="btn" type="button" @click="refresh">重新统计</button>
@@ -17,11 +17,11 @@
     </div>
     <table class="data-table">
       <thead>
-        <tr><th>业务模块</th><th>今日新增</th><th>待处理</th><th>异常量</th></tr>
+        <tr><th>业务模块</th><th>登记总数</th><th>待处理</th><th>异常量</th></tr>
       </thead>
       <tbody>
         <tr v-for="row in moduleRows" :key="row.name">
-          <td>{{ row.name }}</td>
+          <td><RouterLink class="link" :to="`/${row.key}`">{{ row.name }}</RouterLink></td>
           <td>{{ row.created }}</td>
           <td>{{ row.pending }}</td>
           <td>{{ row.abnormal }}</td>

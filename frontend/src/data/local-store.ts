@@ -1,3 +1,5 @@
+import { MODULE_BY_KEY } from './modules'
+import { normalizeRows } from './normalize'
 import { SEED_ROWS } from './seed'
 import type { EntryRow } from './types'
 
@@ -8,8 +10,24 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
+/** 读入时做存量规整（去重回填、缺测标注、实测优先），有变化就写回，迁移一次到位。 */
+function normalizeAll(data: Record<string, EntryRow[]>): { data: Record<string, EntryRow[]>; changed: boolean } {
+  let changed = false
+  const next: Record<string, EntryRow[]> = { ...data }
+  for (const meta of MODULE_BY_KEY.values()) {
+    const rows = next[meta.key]
+    if (!rows) continue
+    const normalized = normalizeRows(meta, rows)
+    if (JSON.stringify(normalized) !== JSON.stringify(rows)) {
+      next[meta.key] = normalized
+      changed = true
+    }
+  }
+  return { data: next, changed }
+}
+
 function readStorage(): Record<string, EntryRow[]> {
-  const fallback = clone(SEED_ROWS)
+  const fallback = normalizeAll(clone(SEED_ROWS)).data
   if (typeof window === 'undefined' || !window.localStorage) {
     return fallback
   }
@@ -20,7 +38,12 @@ function readStorage(): Record<string, EntryRow[]> {
   }
   try {
     const parsed = JSON.parse(raw) as Record<string, EntryRow[]>
-    return { ...fallback, ...parsed }
+    const merged = { ...fallback, ...parsed }
+    const { data, changed } = normalizeAll(merged)
+    if (changed) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    }
+    return data
   } catch {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(fallback))
     return fallback
@@ -41,7 +64,8 @@ export function listRows(key: string): EntryRow[] {
 }
 
 export function saveRows(key: string, rows: EntryRow[]): void {
-  const next = { ...allRows(), [key]: rows }
+  const meta = MODULE_BY_KEY.get(key)
+  const next = { ...allRows(), [key]: meta ? normalizeRows(meta, rows) : rows }
   cache = next
   if (typeof window !== 'undefined' && window.localStorage) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
@@ -49,7 +73,8 @@ export function saveRows(key: string, rows: EntryRow[]): void {
 }
 
 export function resetRows(key: string): EntryRow[] {
-  const rows = clone(SEED_ROWS[key] ?? [])
+  const meta = MODULE_BY_KEY.get(key)
+  const rows = meta ? normalizeRows(meta, clone(SEED_ROWS[key] ?? [])) : clone(SEED_ROWS[key] ?? [])
   saveRows(key, rows)
   return rows
 }

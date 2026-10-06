@@ -1,6 +1,22 @@
 import type { ModuleMeta } from './types'
 
-// 模块元数据由仓库生成时写入：字段、状态、动作、流转目标都在这里，页面不再各自写一遍。
+// 岗位清单：「值班管理员」是统揽只读岗，不归属任何模块；其余岗位各自归属一批模块，
+// 只有归属岗位能改动对应模块，越权改动在 local-service 里统一拒绝。
+export const POSTS = [
+  '值班管理员',
+  '水工运行岗',
+  '电气检修岗',
+  '机械检修岗',
+  '检修管理岗',
+  '运行值长岗',
+] as const
+
+export type Post = (typeof POSTS)[number]
+
+/** 统揽只读岗：能看全部模块，不能改任何模块。 */
+export const READONLY_POST: Post = '值班管理员'
+
+// 模块元数据由仓库生成时写入：字段、状态、动作、流转目标、归属岗位都在这里，页面不再各自写一遍。
 export const MODULES: ModuleMeta[] = [
   {
     key: "station",
@@ -12,6 +28,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["投入试运行", "确认投产", "申请停机"],
     actionTargets: {"投入试运行": "试运行", "确认投产": "正常运行", "申请停机": "停机检修"},
     metrics: ["总装机容量", "正常运行电站", "检修中电站"],
+    ownerPost: "运行值长岗",
   },
   {
     key: "unit",
@@ -23,6 +40,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["开机并网", "停机转备", "登记故障"],
     actionTargets: {"开机并网": "运行中", "停机转备": "停机备用", "登记故障": "故障停机"},
     metrics: ["运行中机组", "备用机组", "故障机组"],
+    ownerPost: "机械检修岗",
   },
   {
     key: "governor",
@@ -34,6 +52,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交校验", "标记异常", "停用装置"],
     actionTargets: {"提交校验": "正常", "标记异常": "异常", "停用装置": "已停用"},
     metrics: ["正常调速器", "待校验装置", "异常装置"],
+    ownerPost: "机械检修岗",
   },
   {
     key: "excitation",
@@ -45,6 +64,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交检查", "标记异常", "退出运行"],
     actionTargets: {"提交检查": "正常", "标记异常": "异常", "退出运行": "已退出"},
     metrics: ["正常装置", "异常装置", "待检查装置"],
+    ownerPost: "电气检修岗",
   },
   {
     key: "transformer",
@@ -56,6 +76,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交试验", "发布告警", "停运检修"],
     actionTargets: {"提交试验": "运行中", "发布告警": "告警", "停运检修": "停运"},
     metrics: ["运行变压器", "告警变压器", "待试验变压器"],
+    ownerPost: "电气检修岗",
   },
   {
     key: "gate",
@@ -67,6 +88,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["开启闸门", "关闭闸门", "登记故障"],
     actionTargets: {"开启闸门": "运行中", "关闭闸门": "已关闭", "登记故障": "故障"},
     metrics: ["开启闸门", "关闭闸门", "故障闸门"],
+    ownerPost: "水工运行岗",
   },
   {
     key: "seepage",
@@ -78,6 +100,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交监测", "发布预警", "确认处理"],
     actionTargets: {"提交监测": "预警", "发布预警": "报警", "确认处理": "已处理"},
     metrics: ["正常测点", "预警测点", "最大渗流量"],
+    ownerPost: "水工运行岗",
   },
   {
     key: "displacement",
@@ -89,6 +112,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交观测", "标记超限", "提交复核"],
     actionTargets: {"提交观测": "观测中", "标记超限": "超限", "提交复核": "已复核"},
     metrics: ["观测中测点", "超限测点", "平均位移"],
+    ownerPost: "水工运行岗",
   },
   {
     key: "trashrack",
@@ -100,6 +124,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["安排清理", "确认完成", "登记损坏"],
     actionTargets: {"安排清理": "清理中", "确认完成": "已清理", "登记损坏": "已损坏"},
     metrics: ["待清理栅体", "已清理栅体", "最大压差"],
+    ownerPost: "水工运行岗",
   },
   {
     key: "overhaul",
@@ -111,6 +136,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交审批", "开工检修", "办理完工"],
     actionTargets: {"提交审批": "已批准", "开工检修": "检修中", "办理完工": "已完工"},
     metrics: ["待审批工作票", "检修中机组", "已完工检修"],
+    ownerPost: "检修管理岗",
   },
   {
     key: "bearing",
@@ -122,6 +148,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交检测", "标记偏高", "确认检修"],
     actionTargets: {"提交检测": "温度偏高", "标记偏高": "待检修", "确认检修": "已检修"},
     metrics: ["正常轴承", "温度偏高轴承", "待检修轴承"],
+    ownerPost: "机械检修岗",
   },
   {
     key: "cooling",
@@ -133,6 +160,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交检查", "标记异常", "停运系统"],
     actionTargets: {"提交检查": "运行中", "标记异常": "异常", "停运系统": "已停运"},
     metrics: ["运行系统", "异常系统", "待检查系统"],
+    ownerPost: "机械检修岗",
   },
   {
     key: "hydrology",
@@ -144,6 +172,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交观测", "下达调度", "提交复核"],
     actionTargets: {"提交观测": "已观测", "下达调度": "已调度", "提交复核": "已复核"},
     metrics: ["今日入库流量", "今日出库流量", "待调度记录"],
+    ownerPost: "水工运行岗",
   },
   {
     key: "flood",
@@ -155,6 +184,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交审批", "开启泄洪", "结束泄洪"],
     actionTargets: {"提交审批": "已批准", "开启泄洪": "泄洪中", "结束泄洪": "已结束"},
     metrics: ["待审批操作", "泄洪中闸门", "今日泄洪量"],
+    ownerPost: "水工运行岗",
   },
   {
     key: "generation",
@@ -166,6 +196,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交编制", "下达计划", "确认完成"],
     actionTargets: {"提交编制": "已下达", "下达计划": "执行中", "确认完成": "已完成"},
     metrics: ["计划发电量", "实际发电量", "计划完成率"],
+    ownerPost: "运行值长岗",
   },
   {
     key: "protection",
@@ -177,6 +208,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交校验", "标记异常", "退出运行"],
     actionTargets: {"提交校验": "正常", "标记异常": "异常", "退出运行": "已退出"},
     metrics: ["正常保护装置", "待校验装置", "即将到期装置"],
+    ownerPost: "电气检修岗",
   },
   {
     key: "defect",
@@ -188,6 +220,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["派发处理", "确认消除", "登记挂账"],
     actionTargets: {"派发处理": "处理中", "确认消除": "已消除", "登记挂账": "已挂账"},
     metrics: ["待处理缺陷", "处理中缺陷", "已消除缺陷"],
+    ownerPost: "检修管理岗",
   },
   {
     key: "crew",
@@ -199,6 +232,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["办理进场", "办理离场", "登记停工"],
     actionTargets: {"办理进场": "在场", "办理离场": "已离场", "登记停工": "已停工"},
     metrics: ["在场人员", "持证人员", "证书即将到期"],
+    ownerPost: "检修管理岗",
   },
   {
     key: "spare",
@@ -210,6 +244,7 @@ export const MODULES: ModuleMeta[] = [
     actions: ["办理验收", "领用备件", "提交补充"],
     actionTargets: {"办理验收": "已登记", "领用备件": "已领用", "提交补充": "待补充"},
     metrics: ["已登记备件", "待补充备件", "本月领用"],
+    ownerPost: "检修管理岗",
   },
 ]
 
